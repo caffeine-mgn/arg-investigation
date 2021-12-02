@@ -1,5 +1,4 @@
 rootProject.name = "Arg-Investigation"
 
-//include(":gorep")
-//include(":web")
-//include(":web-styles")
+include(":stub")
+include(":spy")

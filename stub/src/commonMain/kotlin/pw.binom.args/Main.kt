@@ -13,8 +13,9 @@ import pw.binom.process.exitProcess
 
 fun main(args: Array<String>) {
     val currentExe = File(Environment.currentExecutionPath)
-    val currentOutputFolder = currentExe.parent!!.relative(currentExe.nameWithoutExtension)
-    val outFileName = "${Date().iso8601().replace(':', '_')}.txt"
+    val originalFile = currentExe.parent!!.relative("spy." + currentExe.name)
+    val currentOutputFolder = originalFile.parent!!.relative("spy.logs")
+    val outFileName = "${currentExe.name}_${Date().iso8601().replace(':', '_')}.txt"
     val nameOfOutputFile = currentOutputFolder.relative(outFileName)
     currentOutputFolder.mkdirs()
     val sb = StringBuilder()
@@ -24,18 +25,18 @@ fun main(args: Array<String>) {
         sb.appendLine(s)
     }
 
-    if (currentExe.nameWithoutExtension == "clang" || currentExe.nameWithoutExtension == "clang++") {
-        val i = args.iterator()
-        while (i.hasNext()) {
-            val e = i.next()
-            if (e == "-c") {
-                val source = File(i.next())
-                source.copy(currentOutputFolder.relative(source.name))
-            }
-        }
-    }
+//    if (currentExe.nameWithoutExtension == "clang" || currentExe.nameWithoutExtension == "clang++") {
+//        val i = args.iterator()
+//        while (i.hasNext()) {
+//            val e = i.next()
+//            if (e == "-c") {
+//                val source = File(i.next())
+//                source.copy(currentOutputFolder.relative(source.name))
+//            }
+//        }
+//    }
     val p = Process.execute(
-            "${currentExe.nameWithoutExtension}.replaced.exe",
+            path = originalFile.path,
             args = args.toList(),
             env = Environment.getEnvs(),
             workDir = Environment.workDirectory,
