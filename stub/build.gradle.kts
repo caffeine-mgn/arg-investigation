@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
 plugins {
     id("org.jetbrains.kotlin.multiplatform")
+    kotlin("plugin.serialization") version "1.5.31"
 }
 
 fun KotlinNativeTarget.config() {
@@ -66,6 +67,7 @@ kotlin {
                 api("pw.binom.io:date:0.1.32")
                 api("pw.binom.io:process:0.1.32")
                 api("pw.binom.io:concurrency:0.1.32")
+                api(project(":shared"))
             }
         }
 

@@ -13,7 +13,30 @@ import pw.binom.process.exitProcess
 
 fun main(args: Array<String>) {
     val currentExe = File(Environment.currentExecutionPath)
-    val originalFile = currentExe.parent!!.relative("spy." + currentExe.name)
+    val spyConfig = currentExe.openRead().use { exe ->
+        exe.position = exe.size - Int.SIZE_BYTES
+        val infoSize = ByteBuffer.alloc(Int.SIZE_BYTES) { buf ->
+            exe.read(buf)
+            buf.flip()
+            Int.fromBytes(buf)
+        }
+        val offset = Int.SIZE_BYTES + infoSize
+        exe.position = exe.size - offset
+        val infoData = ByteBuffer.alloc(infoSize) { infoBuffer ->
+            ByteBuffer.alloc(DEFAULT_BUFFER_SIZE) { buf ->
+                exe.copyTo(infoBuffer, infoBuffer.capacity)
+            }
+            infoBuffer.flip()
+            infoBuffer.toByteArray()
+        }
+        protoBuf.decodeFromByteArray(ExecutionConfig.serializer(), infoData)
+    }
+    val originalFile = File(spyConfig.executeFile)
+    if (!originalFile.isFile) {
+        Console.err.appendLine("Original File $originalFile not found")
+        exitProcess(1)
+        return
+    }
     val currentOutputFolder = originalFile.parent!!.relative("spy.logs")
     val outFileName = "${currentExe.name}_${Date().iso8601().replace(':', '_')}.txt"
     val nameOfOutputFile = currentOutputFolder.relative(outFileName)
@@ -24,7 +47,6 @@ fun main(args: Array<String>) {
     args.forEachIndexed { index, s ->
         sb.appendLine(s)
     }
-
 //    if (currentExe.nameWithoutExtension == "clang" || currentExe.nameWithoutExtension == "clang++") {
 //        val i = args.iterator()
 //        while (i.hasNext()) {
@@ -55,7 +77,7 @@ private fun startPrinter(p: Process, from: Input, to: Output) {
     val w = Worker.create()
     w.execute {
         try {
-            ByteBuffer.alloc(1) { buf ->
+            ByteBuffer.alloc(DEFAULT_BUFFER_SIZE) { buf ->
                 while (p.isActive) {
                     buf.clear()
                     val l = from.read(buf)

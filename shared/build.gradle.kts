@@ -1,4 +1,6 @@
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.konan.target.KonanTarget
+
 
 plugins {
     id("org.jetbrains.kotlin.multiplatform")
@@ -7,8 +9,10 @@ plugins {
 
 fun KotlinNativeTarget.config() {
     binaries {
-        executable {
-            entryPoint = "pw.binom.args.main"
+        if (target.konanTarget==KonanTarget.MACOS_ARM64 || target.konanTarget==KonanTarget.MACOS_X64){
+            framework()
+        } else {
+            staticLib()
         }
     }
 }
@@ -63,8 +67,8 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api("org.jetbrains.kotlin:kotlin-stdlib-common:1.6.0")
-                api("pw.binom.io:file:0.1.32")
-                api(project(":shared"))
+                api("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.3.1")
+                api("pw.binom.io:core:0.1.32")
             }
         }
 
@@ -152,5 +156,3 @@ kotlin {
         }
     }
 }
-
-apply<pw.binom.AppenderPlugin>()

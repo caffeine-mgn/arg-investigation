@@ -1,6 +1,7 @@
 package pw.binom.args
 
 import pw.binom.*
+import pw.binom.io.EOFException
 import pw.binom.io.IOException
 import pw.binom.io.file.*
 import pw.binom.io.use
@@ -9,7 +10,8 @@ object Stub {
     private var isStubValid = false
     private var stubSize = 0L
     private val stubStart by lazy {
-        stubSize - STUB_IN_SPY_MAGIC_BYTES.size - Long.SIZE_BYTES
+        val spySize = File(Environment.currentExecutionPath).size
+        spySize - stubSize - STUB_IN_SPY_MAGIC_BYTES.size - Long.SIZE_BYTES
     }
 
     private fun checkStub() {
@@ -35,38 +37,36 @@ object Stub {
         }
     }
 
-    fun unpack(dest: File) {
+    fun unpack(config: ExecutionConfig, dest: File) {
+        checkStub()
         if (dest.parent?.mkdirs() == null) {
             throw IOException("Can't create ${dest.parent}")
         }
         dest.openWrite().use { dest ->
             File(Environment.currentExecutionPath).openRead().use { exe ->
-                var rem = stubSize
                 exe.position = stubStart
                 ByteBuffer.alloc(DEFAULT_BUFFER_SIZE) { buf ->
-                    while (rem > 0) {
-                        buf.clear()
-                        buf.limit = minOf(buf.capacity, rem.toInt())
-                        val l = exe.read(buf)
-                        if (l <= 0) {
-                            throw IOException("Can't unpack stub to $dest: Spy file is EOF")
-                        }
-                        buf.flip()
-                        rem -= dest.write(buf)
-                    }
+                    exe.copyTo(dest, stubSize, buf)
+
+                    val configData = protoBuf.encodeToByteArray(ExecutionConfig.serializer(), config)
+                    buf.clear()
+                    buf.write(configData)
+                    buf.writeInt(configData.size)
+                    buf.flip()
+                    dest.write(buf)
                 }
             }
         }
     }
 
-    fun stubFile(original: File) {
+    fun stubFile(config: ExecutionConfig, original: File) {
         val stub = original.parent!!.relative("spy.${original.name}")
         original.renameTo(stub)
-        unpack(original)
+        unpack(config = config, dest = original)
     }
 
     fun unstubFile(stub: File) {
-        val originalFile = stub.parent!!.relative(stub.name.removePrefix("spy."))
+        val originalFile = stub.parent!!.relative("spy." + stub.name)
         if (!originalFile.isFile) {
             throw IllegalStateException("Can't unstub \"$stub\". Original file \"$originalFile\" not found")
         }

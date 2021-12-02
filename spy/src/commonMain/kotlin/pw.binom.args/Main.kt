@@ -2,9 +2,7 @@ package pw.binom.args
 
 import pw.binom.Environment
 import pw.binom.currentExecutionPath
-import pw.binom.io.file.File
-import pw.binom.io.file.name
-import pw.binom.io.file.workDirectoryFile
+import pw.binom.io.file.*
 import pw.binom.isWildcardMatch
 
 //import pw.binom.*
@@ -24,10 +22,23 @@ fun stub(it: Iterator<String>) {
     if (!it.hasNext()) {
         throw IllegalArgumentException("Expected file mask")
     }
-    val mask = it.next()
-    Environment.workDirectoryFile.list().forEach {
-        if (it.isFile && it.name.isWildcardMatch(mask)) {
-            Stub.stubFile(it)
+    while (it.hasNext()) {
+        val mask = it.next()
+        Environment.workDirectoryFile.list().forEach {
+            if (it.name.startsWith("spy.")) {
+                return@forEach
+            }
+            if (it.isFile && it.name.isWildcardMatch(mask)) {
+                val newOriginalName = it.parent!!.relative("spy.${it.name}")
+                if (newOriginalName.isFile) {
+                    return@forEach
+                }
+                println("Stub ${it.name} -> $newOriginalName")
+                Stub.stubFile(config = ExecutionConfig(
+                        executeFile = newOriginalName.path,
+                        dirForLog = it.parent!!.relative("spy.logs").path,
+                ), original = it)
+            }
         }
     }
 }
@@ -36,10 +47,15 @@ fun unstub(it: Iterator<String>) {
     if (!it.hasNext()) {
         throw IllegalArgumentException("Expected file mask")
     }
-    val mask = it.next()
-    Environment.workDirectoryFile.list().forEach {
-        if (it.isFile && it.name.isWildcardMatch(mask)) {
-            Stub.unstubFile(it)
+    while (it.hasNext()) {
+        val mask = it.next()
+        Environment.workDirectoryFile.list().forEach {
+            if (it.name.startsWith("spy.")) {
+                return@forEach
+            }
+            if (it.isFile && it.name.isWildcardMatch(mask)) {
+                Stub.unstubFile(it)
+            }
         }
     }
 }
