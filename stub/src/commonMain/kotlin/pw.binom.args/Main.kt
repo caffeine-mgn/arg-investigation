@@ -60,10 +60,10 @@ fun main(args: Array<String>) {
 //        }
 //    }
     val p = Process.execute(
-            path = originalFile.path,
-            args = args.toList(),
-            env = Environment.getEnvs(),
-            workDir = Environment.workDirectory,
+        path = originalFile.path,
+        args = args.toList(),
+        env = Environment.getEnvs(),
+        workDir = Environment.workDirectory,
     )
     startPrinter(p, from = p.stdout, to = Console.stdChannel)
     startPrinter(p, from = p.stderr, to = Console.errChannel)
