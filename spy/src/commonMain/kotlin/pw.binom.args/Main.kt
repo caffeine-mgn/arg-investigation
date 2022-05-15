@@ -5,17 +5,6 @@ import pw.binom.currentExecutionPath
 import pw.binom.io.file.*
 import pw.binom.isWildcardMatch
 
-//import pw.binom.*
-//import pw.binom.concurrency.Worker
-//import pw.binom.concurrency.create
-//import pw.binom.date.Date
-//import pw.binom.date.iso8601
-//import pw.binom.io.file.*
-//import pw.binom.io.use
-//import pw.binom.process.Process
-//import pw.binom.process.execute
-//import pw.binom.process.exitProcess
-
 val STUB_IN_SPY_MAGIC_BYTES = byteArrayOf(0x33, 0x43, 0x54)
 
 fun stub(it: Iterator<String>) {
@@ -34,10 +23,13 @@ fun stub(it: Iterator<String>) {
                     return@forEach
                 }
                 println("Stub ${it.name} -> $newOriginalName")
-                Stub.stubFile(config = ExecutionConfig(
+                Stub.stubFile(
+                    config = ExecutionConfig(
                         executeFile = newOriginalName.path,
                         dirForLog = it.parent!!.relative("spy.logs").path,
-                ), original = it)
+                    ),
+                    original = it
+                )
             }
         }
     }
@@ -70,7 +62,6 @@ fun invalidCmd(cmd: String, it: Iterator<String>) {
     println("Unknown cmd \"$cmd\"")
     help(it)
 }
-
 
 fun main(args: Array<String>) {
     val it = args.iterator()

@@ -66,9 +66,9 @@ kotlin {
 
         val commonMain by getting {
             dependencies {
-                api("org.jetbrains.kotlin:kotlin-stdlib-common:1.6.0")
-                api("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.3.1")
-                api("pw.binom.io:core:0.1.32")
+                api("org.jetbrains.kotlin:kotlin-stdlib-common:${pw.binom.Versions.KOTLIN_VERSION}")
+                api("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:${pw.binom.Versions.KOTLINX_SERIALIZATION_VERSION}")
+                api("pw.binom.io:core:${pw.binom.Versions.BINOM_VERSION}")
             }
         }
 

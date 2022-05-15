@@ -1,7 +1,7 @@
 package pw.binom.args
 
 import pw.binom.*
-import pw.binom.io.EOFException
+import pw.binom.io.ByteBuffer
 import pw.binom.io.IOException
 import pw.binom.io.file.*
 import pw.binom.io.use
@@ -17,12 +17,12 @@ object Stub {
     private fun checkStub() {
         File(Environment.currentExecutionPath).openRead().use { exe ->
             exe.position = exe.size - STUB_IN_SPY_MAGIC_BYTES.size - Long.SIZE_BYTES
-            stubSize = ByteBuffer.alloc(Long.SIZE_BYTES) { buf ->
+            stubSize = ByteBuffer.alloc(Long.SIZE_BYTES).use { buf ->
                 exe.read(buf)
                 buf.flip()
                 Long.fromBytes(buf)
             }
-            val actualMagic = ByteBuffer.alloc(STUB_IN_SPY_MAGIC_BYTES.size) { buf ->
+            val actualMagic = ByteBuffer.alloc(STUB_IN_SPY_MAGIC_BYTES.size).use { buf ->
                 exe.read(buf)
                 buf.flip()
                 val v = buf.toByteArray()
@@ -45,7 +45,7 @@ object Stub {
         dest.openWrite().use { dest ->
             File(Environment.currentExecutionPath).openRead().use { exe ->
                 exe.position = stubStart
-                ByteBuffer.alloc(DEFAULT_BUFFER_SIZE) { buf ->
+                ByteBuffer.alloc(DEFAULT_BUFFER_SIZE).use { buf ->
                     exe.copyTo(dest, stubSize, buf)
 
                     val configData = protoBuf.encodeToByteArray(ExecutionConfig.serializer(), config)

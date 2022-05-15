@@ -2,9 +2,11 @@ package pw.binom.args
 
 import pw.binom.*
 import pw.binom.concurrency.Worker
-import pw.binom.concurrency.create
 import pw.binom.date.Date
 import pw.binom.date.iso8601
+import pw.binom.io.ByteBuffer
+import pw.binom.io.Input
+import pw.binom.io.Output
 import pw.binom.io.file.*
 import pw.binom.io.use
 import pw.binom.process.Process
@@ -15,15 +17,15 @@ fun main(args: Array<String>) {
     val currentExe = File(Environment.currentExecutionPath)
     val spyConfig = currentExe.openRead().use { exe ->
         exe.position = exe.size - Int.SIZE_BYTES
-        val infoSize = ByteBuffer.alloc(Int.SIZE_BYTES) { buf ->
+        val infoSize = ByteBuffer.alloc(Int.SIZE_BYTES).use { buf ->
             exe.read(buf)
             buf.flip()
             Int.fromBytes(buf)
         }
         val offset = Int.SIZE_BYTES + infoSize
         exe.position = exe.size - offset
-        val infoData = ByteBuffer.alloc(infoSize) { infoBuffer ->
-            ByteBuffer.alloc(DEFAULT_BUFFER_SIZE) { buf ->
+        val infoData = ByteBuffer.alloc(infoSize).use { infoBuffer ->
+            ByteBuffer.alloc(DEFAULT_BUFFER_SIZE).use { buf ->
                 exe.copyTo(infoBuffer, infoBuffer.capacity)
             }
             infoBuffer.flip()
@@ -74,10 +76,10 @@ fun main(args: Array<String>) {
 }
 
 private fun startPrinter(p: Process, from: Input, to: Output) {
-    val w = Worker.create()
-    w.execute {
+    val w = Worker()
+    w.execute(Unit) {
         try {
-            ByteBuffer.alloc(DEFAULT_BUFFER_SIZE) { buf ->
+            ByteBuffer.alloc(DEFAULT_BUFFER_SIZE).use { buf ->
                 while (p.isActive) {
                     buf.clear()
                     val l = from.read(buf)
@@ -98,7 +100,7 @@ private inline fun Input.readByte2(buffer: ByteBuffer, ret: (Byte) -> Unit): Boo
     buffer.reset(0, 1)
     if (read(buffer) == 1) {
         buffer.flip()
-        val value = buffer.get()
+        val value = buffer.getByte()
         ret(value)
         return true
     }
@@ -108,7 +110,7 @@ private inline fun Input.readByte2(buffer: ByteBuffer, ret: (Byte) -> Unit): Boo
 fun File.copy(to: File) {
     openRead().use { input ->
         to.openWrite().use { output ->
-            ByteBuffer.alloc(DEFAULT_BUFFER_SIZE) { buf ->
+            ByteBuffer.alloc(DEFAULT_BUFFER_SIZE).use { buf ->
                 while (true) {
                     buf.clear()
                     val len = input.read(buf)

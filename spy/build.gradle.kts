@@ -62,8 +62,8 @@ kotlin {
 
         val commonMain by getting {
             dependencies {
-                api("org.jetbrains.kotlin:kotlin-stdlib-common:1.6.0")
-                api("pw.binom.io:file:0.1.32")
+                api("org.jetbrains.kotlin:kotlin-stdlib-common:${pw.binom.Versions.KOTLIN_VERSION}")
+                api("pw.binom.io:file:${pw.binom.Versions.BINOM_VERSION}")
                 api(project(":shared"))
             }
         }
@@ -81,7 +81,6 @@ kotlin {
             }
         }
         val linuxX64Test by getting {
-
         }
 
         if (pw.binom.Target.LINUX_ARM32HFP_SUPPORT) {
@@ -141,7 +140,6 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 api("org.jetbrains.kotlin:kotlin-stdlib:${pw.binom.Versions.KOTLIN_VERSION}")
-                api("org.luaj:luaj-jse:3.0.1")
             }
         }
 

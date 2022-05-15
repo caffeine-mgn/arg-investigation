@@ -2,20 +2,20 @@ package pw.binom.args
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoBuf
-import pw.binom.ByteBuffer
-import pw.binom.Input
-import pw.binom.Output
+import pw.binom.io.ByteBuffer
 import pw.binom.io.EOFException
+import pw.binom.io.Input
+import pw.binom.io.Output
 
 @Serializable
 data class ExecutionConfig(
-        val executeFile: String,
-        val dirForLog: String?,
+    val executeFile: String,
+    val dirForLog: String?,
 )
 
 @Serializable
 data class SpyConfig(
-        val dirForLog: String?,
+    val dirForLog: String?,
 )
 
 val protoBuf = ProtoBuf { }

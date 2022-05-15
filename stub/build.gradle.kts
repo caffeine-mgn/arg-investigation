@@ -62,11 +62,11 @@ kotlin {
 
         val commonMain by getting {
             dependencies {
-                api("org.jetbrains.kotlin:kotlin-stdlib-common:1.6.0")
-                api("pw.binom.io:file:0.1.32")
-                api("pw.binom.io:date:0.1.32")
-                api("pw.binom.io:process:0.1.32")
-                api("pw.binom.io:concurrency:0.1.32")
+                api("org.jetbrains.kotlin:kotlin-stdlib-common:${pw.binom.Versions.KOTLIN_VERSION}")
+                api("pw.binom.io:file:${pw.binom.Versions.BINOM_VERSION}")
+                api("pw.binom.io:date:${pw.binom.Versions.BINOM_VERSION}")
+                api("pw.binom.io:process:${pw.binom.Versions.BINOM_VERSION}")
+                api("pw.binom.io:concurrency:${pw.binom.Versions.BINOM_VERSION}")
                 api(project(":shared"))
             }
         }
