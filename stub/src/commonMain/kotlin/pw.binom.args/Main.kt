@@ -1,31 +1,29 @@
 package pw.binom.args
 
 import pw.binom.*
+import pw.binom.atomic.AtomicBoolean
 import pw.binom.concurrency.Worker
-import pw.binom.date.Date
+import pw.binom.date.DateTime
 import pw.binom.date.iso8601
-import pw.binom.io.ByteBuffer
-import pw.binom.io.Input
-import pw.binom.io.Output
+import pw.binom.io.*
 import pw.binom.io.file.*
-import pw.binom.io.use
-import pw.binom.process.Process
-import pw.binom.process.execute
+import pw.binom.process.ProcessStarter
 import pw.binom.process.exitProcess
+import pw.binom.thread.Thread
 
 fun main(args: Array<String>) {
     val currentExe = File(Environment.currentExecutionPath)
     val spyConfig = currentExe.openRead().use { exe ->
         exe.position = exe.size - Int.SIZE_BYTES
-        val infoSize = ByteBuffer.alloc(Int.SIZE_BYTES).use { buf ->
+        val infoSize = ByteBuffer(Int.SIZE_BYTES).use { buf ->
             exe.read(buf)
             buf.flip()
             Int.fromBytes(buf)
         }
         val offset = Int.SIZE_BYTES + infoSize
         exe.position = exe.size - offset
-        val infoData = ByteBuffer.alloc(infoSize).use { infoBuffer ->
-            ByteBuffer.alloc(DEFAULT_BUFFER_SIZE).use { buf ->
+        val infoData = ByteBuffer(infoSize).use { infoBuffer ->
+            ByteBuffer(DEFAULT_BUFFER_SIZE).use { buf ->
                 exe.copyTo(infoBuffer, infoBuffer.capacity)
             }
             infoBuffer.flip()
@@ -39,8 +37,8 @@ fun main(args: Array<String>) {
         exitProcess(1)
         return
     }
-    val currentOutputFolder = originalFile.parent!!.relative("spy.logs")
-    val outFileName = "${currentExe.name}_${Date().iso8601().replace(':', '_')}.txt"
+    val currentOutputFolder = originalFile.parent.relative("spy.logs")
+    val outFileName = "${currentExe.name}_${DateTime.now.iso8601().replace(':', '_')}.txt"
     val nameOfOutputFile = currentOutputFolder.relative(outFileName)
     currentOutputFolder.mkdirs()
     val sb = StringBuilder()
@@ -59,40 +57,48 @@ fun main(args: Array<String>) {
 //            }
 //        }
 //    }
-    val p = Process.execute(
+    val processBuilder = ProcessStarter.create(
         path = originalFile.path,
         args = args.toList(),
-        env = Environment.getEnvs(),
+        envs = Environment.getEnvs(),
         workDir = Environment.workDirectory,
     )
-    startPrinter(p, from = p.stdout, to = Console.stdChannel)
-    startPrinter(p, from = p.stderr, to = Console.errChannel)
-    startPrinter(p, from = Console.inChannel, to = p.stdin)
-    p.join()
-    sb.appendLine()
-    sb.appendLine("Exit Status: ${p.exitStatus}")
-    nameOfOutputFile.rewrite(sb.toString())
-    exitProcess(p.exitStatus)
+    StreamReader(from = processBuilder.stdout, to = Console.stdChannel).use { stdout ->
+        StreamReader(from = processBuilder.stderr, to = Console.errChannel).use { stderr ->
+            StreamReader(from = Console.inChannel, to = processBuilder.stdin).use { stdin ->
+                val process = processBuilder.start()
+                stdout.start()
+                sb.appendLine()
+                sb.appendLine("Exit Status: ${process.exitStatus}")
+                nameOfOutputFile.rewrite(sb.toString())
+                exitProcess(process.exitStatus)
+            }
+        }
+    }
 }
 
-private fun startPrinter(p: Process, from: Input, to: Output) {
-    val w = Worker()
-    w.execute(Unit) {
-        try {
-            ByteBuffer.alloc(DEFAULT_BUFFER_SIZE).use { buf ->
-                while (p.isActive) {
-                    buf.clear()
-                    val l = from.read(buf)
-                    if (l <= 0) {
-                        break
-                    }
-                    buf.flip()
-                    to.write(buf)
+class StreamReader(from: Input, to: Output) : Closeable {
+    private val closed = AtomicBoolean(false)
+    val thread = Thread {
+        ByteBuffer(DEFAULT_BUFFER_SIZE).use { buf ->
+            while (!closed.getValue()) {
+                buf.clear()
+                val l = from.read(buf)
+                if (l <= 0) {
+                    break
                 }
+                buf.flip()
+                to.write(buf)
             }
-        } finally {
-            w.requestTermination()
         }
+    }
+
+    fun start() {
+        thread.start()
+    }
+
+    override fun close() {
+        closed.setValue(false)
     }
 }
 
@@ -110,7 +116,7 @@ private inline fun Input.readByte2(buffer: ByteBuffer, ret: (Byte) -> Unit): Boo
 fun File.copy(to: File) {
     openRead().use { input ->
         to.openWrite().use { output ->
-            ByteBuffer.alloc(DEFAULT_BUFFER_SIZE).use { buf ->
+            ByteBuffer(DEFAULT_BUFFER_SIZE).use { buf ->
                 while (true) {
                     buf.clear()
                     val len = input.read(buf)

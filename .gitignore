@@ -1,0 +1,10 @@
+# Created by .ignore support plugin (hsz.mobi)
+build
+.idea
+.fleet
+.gradle/**
+*.o
+buildSrc/.gradle/**
+/kotlin-js-store/**
+/desktop.files.json
+compile_commands.json

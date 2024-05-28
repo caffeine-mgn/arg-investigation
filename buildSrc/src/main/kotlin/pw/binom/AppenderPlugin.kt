@@ -12,9 +12,9 @@ class AppenderPlugin : Plugin<Project> {
         val stubProject = target.rootProject.project(":stub")
         val buildTask = target.tasks.findByName("build")!!
         target.tasks.eachKotlinNativeLink(release = true, debug = true, test = false) {
-            val task = target.tasks.register("link${it.binary.buildType.name.toLowerCase().capitalize()}ExecutableWithStub${it.binary.target.konanTarget.presetName.capitalize()}", pw.binom.AppenderTask::class.java).get()
+            val task = target.tasks.register("link${it.binary.buildType.name.lowercase().capitalize()}ExecutableWithStub${it.binary.target.konanTarget.presetName.capitalize()}", pw.binom.AppenderTask::class.java).get()
             task.spyTask.set(it)
-            task.outputBinary.set(target.buildDir.resolve("withStub/${it.binary.target.konanTarget.presetName}/${it.binary.buildType.name.toLowerCase()}/${it.binary.outputFile.name}"))
+            task.outputBinary.set(target.buildDir.resolve("withStub/${it.binary.target.konanTarget.presetName}/${it.binary.buildType.name.lowercase()}/${it.binary.outputFile.name}"))
             task.inputs.file(it.binary.outputFile)
             task.group = "build"
             task.dependsOn(it)
