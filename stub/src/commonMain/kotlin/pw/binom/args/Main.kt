@@ -36,9 +36,9 @@ fun main(args: Array<String>) {
         exitProcess(1)
         return
     }
-    val currentOutputFolder = originalFile.parent.relative("spy.logs")
+    val currentOutputFolder = spyConfig.dirForLog?.let { File(it) } ?: originalFile.parent.relative("spy.logs")
     val outFileName = "${currentExe.name}_${DateTime.now.iso8601().replace(':', '_')}.txt"
-    val nameOfOutputFile = currentOutputFolder.relative(outFileName)
+    val nameOfOutputFile = currentOutputFolder.relative(originalFile.name).relative(outFileName)
     currentOutputFolder.mkdirs()
     val sb = StringBuilder()
     sb.appendLine("Exe path: $currentExe")
@@ -46,6 +46,12 @@ fun main(args: Array<String>) {
     args.forEachIndexed { index, s ->
         sb.appendLine(s)
     }
+    sb.appendLine("Environments:")
+    Environment.getEnvs().forEach { (key, value) ->
+        sb.appendLine("$key=$value")
+    }
+    sb.appendLine()
+    sb.appendLine()
 //    if (currentExe.nameWithoutExtension == "clang" || currentExe.nameWithoutExtension == "clang++") {
 //        val i = args.iterator()
 //        while (i.hasNext()) {
@@ -83,7 +89,7 @@ class StreamReader(from: Input, to: Output) : Closeable {
             while (!closed.getValue()) {
                 buf.clear()
                 val l = from.read(buf)
-                if (l <= 0) {
+                if (l.isNotAvailable) {
                     break
                 }
                 buf.flip()
@@ -103,7 +109,7 @@ class StreamReader(from: Input, to: Output) : Closeable {
 
 private inline fun Input.readByte2(buffer: ByteBuffer, ret: (Byte) -> Unit): Boolean {
     buffer.reset(0, 1)
-    if (read(buffer) == 1) {
+    if (read(buffer).isAvailable) {
         buffer.flip()
         val value = buffer.getByte()
         ret(value)
@@ -119,7 +125,7 @@ fun File.copy(to: File) {
                 while (true) {
                     buf.clear()
                     val len = input.read(buf)
-                    if (len <= 0) {
+                    if (len.isNotAvailable) {
                         break
                     }
                     buf.flip()

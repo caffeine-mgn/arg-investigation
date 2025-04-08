@@ -29,10 +29,13 @@ fun Input.copyTo(output: Output, size: Long, buf: ByteBuffer) {
         buf.clear()
         buf.limit = minOf(buf.capacity, rem.toInt())
         val l = read(buf)
-        if (l <= 0) {
+        if (l.isNotAvailable) {
             throw EOFException()
         }
         buf.flip()
-        rem -= output.write(buf)
+        val w = output.write(buf)
+        if (w.isAvailable){
+            rem -= w.length
+        }
     }
 }

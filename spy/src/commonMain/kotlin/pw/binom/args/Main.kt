@@ -6,7 +6,7 @@ import pw.binom.url.isWildcardMatch
 
 val STUB_IN_SPY_MAGIC_BYTES = byteArrayOf(0x33, 0x43, 0x54)
 
-fun stub(mask: String, it: Sequence<File>) {
+fun stub(mask: String, it: Sequence<File>, dirLog: File?) {
     it.forEach {
         if (it.name.startsWith("spy.")) {
             return@forEach
@@ -32,7 +32,7 @@ fun stub(mask: String, it: Sequence<File>) {
         Stub.stubFile(
             config = ExecutionConfig(
                 executeFile = newOriginalName.path,
-                dirForLog = it.parent.relative("spy.logs").path,
+                dirForLog = dirLog?.path,
             ),
             original = it
         )
@@ -52,7 +52,7 @@ fun unstub(mask: String) {
 
 fun help(it: Iterator<String>) {
     println("Usage ${File(Environment.currentExecutionPath).name} commands")
-    println("  stub <wildcard> for create stub spy")
+    println("  stub <wildcard> [dir for store logs] for create stub spy")
     println("  unstub <wildcard> for remove stub spy")
 }
 
@@ -66,7 +66,16 @@ fun main(args: Array<String>) {
     while (it.hasNext()) {
         val cmd = it.next()
         when (cmd) {
-            "stub", "-stub" -> stub(mask = it.next(), it = Environment.workDirectoryFile.walkDownSequence())
+            "stub", "-stub" -> {
+                val mask = it.next()
+                val spyLogDir = if (it.hasNext()) File(it.next()) else Environment.workDirectoryFile.relative("spy.logs")
+                stub(
+                    mask = mask,
+                    it = Environment.workDirectoryFile.walkDownSequence(),
+                    dirLog = spyLogDir,
+                )
+            }
+
             "unstub", "-unstub" -> unstub(it.next())
             "help", "-help", "--help" -> help(it)
             else -> invalidCmd(cmd, it)
